@@ -5,7 +5,7 @@ module Lib
 import qualified Data.Sort
 import qualified Math.NumberTheory.Primes
 import qualified Math.NumberTheory.Primes.Testing as P
---import qualified Math.NumberTheory.Primes.Factorisation as F
+import qualified Math.NumberTheory.Primes.Factorisation as F
 --import qualified Math.NumberTheory.Primes.Factorisation
 import qualified System.IO
 import qualified Data.List as L
@@ -16,8 +16,11 @@ import qualified Data.Function (on)
 import qualified Numeric
 import qualified Data.Char
 import qualified Data.Text as T
-import Data.MemoCombinators (memo2, integral) 
-
+--import qualified Data.MemoCombinators (memo2, integral) as Memo
+import qualified Data.MemoCombinators as Memo
+import qualified Data.Array as A
+import qualified Math.Combinat.Partitions.Integer as C
+import Control.Arrow ((&&&))
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
@@ -138,6 +141,7 @@ sol56 = last $ X.sortOn (\(_,_,c) -> c) [(a, b, sumOfDigits $ a^b) | a <- [1..10
 -- 2 7 ->                             4x2 7x1
 -- 1 9 ->                                 9x1
 
+-- Selbstgemacht
 piles :: Integer -> Integer
 piles n = sum [pilesHelper n i | i <- [1..n]]
 pilesHelper :: Integer -> Integer -> Integer
@@ -146,14 +150,53 @@ pilesHelper n k | k > n = 0
                 | k == 0 = 0
                 | otherwise = ((pilesHelper (n-k) k) +
                                (pilesHelper (n-1) (k-1))) 
-
-temp78 = [3,5,7,9,8,7,6]
-sol78 = head . dropWhile (((/=) 0) . (flip mod 1000000) . snd) $
-        zip [0..] a000041_list
-        
+-- oeis.org
 a000041 n = a000041_list !! n
 a000041_list = map (p' 1) [0..]
   where
-    p' = memo2 integral integral p
+    p' = Memo.memo2 Memo.integral Memo.integral p
     p _ 0 = 1
     p k m = if m < k then 0 else p' k (m - k) + p' (k + 1) m
+
+-- wiki.haskell.org
+partitions :: A.Array Int Integer
+partitions = 
+    A.array (0,1000000) $ 
+    (0,1) : 
+    [(n,sum [s * partitions A.! p|
+    (s,p) <- zip signs $ parts n])|
+    n <- [1..1000000]]
+    where
+        signs = cycle [1,1,(-1),(-1)]
+        suite = map penta $ concat [[n,(-n)]|n <- [1..]]
+        penta n = n*(3*n - 1) `div` 2
+        parts n = takeWhile (>= 0) [n-x| x <- suite]
+
+problem_78 :: Int
+problem_78 = 
+    head $ filter (\x -> (partitions A.! x) `mod` 1000000 == 0) [1..]
+
+-- Von den Profis
+sol78 = head . dropWhile (((/=) 0) . (flip mod 10000000) . snd) $
+        zip [0..] $ map C.countPartitions [0..]
+-- ---------------------- project euler 88 -----------------------------
+--isNaturalNum n = n == (sum $ divisors' n)
+
+factorise' :: Integer -> [(Integer, Int)]
+factorise' n = map (\(f, t) -> (f, fromIntegral t)) $ F.factorise n
+
+--divisors :: Integral a => a -> [a]
+divisors n = map product $ sequence 
+                    [take (k+1) $ iterate (p*) 1 | (p,k) <- factorise' n]
+divisors' n = foldr go [1] . map (head &&& length) . X.group $ fac n 2
+    where
+    go (_, 0) xs = xs
+    go (p, k) xs = let ys = map (* p) xs in go (p, pred k) ys ++ xs
+    fac n i
+        | n < i * i      = if n == 1 then [] else [n]
+        | n `mod` i == 0 = i: fac (n `div` i) i
+        | otherwise      = fac n $ succ i
+
+über n k = fact n `div` fact k `div` fact (n - k)
+stirling2 n k = sum [(-1)^(k-j) * (k `über`j) * j^n | j <- [1..k]] `div` fact k
+sumStirling2 n k = sum [stirling2 k r | r <- [0..n]] 

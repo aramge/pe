@@ -26,6 +26,8 @@ dependencies:
 - extra
 - text
 - data-memocombinators
+- array
+- combinat
 
 library:
   source-dirs: src

@@ -11,6 +11,13 @@ packages:
       sha256: 9790a62e7d735aa358036f9f3905e7adb0a267bf1abf9cac5c9542f701caf3e3
   original:
     hackage: arithmoi-0.9.0.0@sha256:34dfc875556893bcb3e401d8ab88523dfd6158f5df0dfc5fbdcc2dfa3c442f77,7879
+- completed:
+    hackage: combinat-0.2.9.0@sha256:3daed23a2376f8d9903dc2c1c3758f1f2a0527178c81023080507e5f5ddf5b7a,5107
+    pantry-tree:
+      size: 4818
+      sha256: 7c14bb4cc6cb0b2d6f14ae8265241966fe6c2e07827d18acad8de1bdc1ba8540
+  original:
+    hackage: combinat-0.2.9.0@sha256:3daed23a2376f8d9903dc2c1c3758f1f2a0527178c81023080507e5f5ddf5b7a,5107
 snapshots:
 - completed:
     size: 500539
