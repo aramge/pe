@@ -200,3 +200,31 @@ divisors' n = foldr go [1] . map (head &&& length) . X.group $ fac n 2
 über n k = fact n `div` fact k `div` fact (n - k)
 stirling2 n k = sum [(-1)^(k-j) * (k `über`j) * j^n | j <- [1..k]] `div` fact k
 sumStirling2 n k = sum [stirling2 k r | r <- [0..n]] 
+
+powerset :: [a] -> [[a]]
+powerset (x:xs) = let xs' = powerset xs in xs' ++ map (x:) xs'
+powerset []     = [[]]
+
+{-
+#Project Euler Problem 88
+#https://blog.dreamshire.com/project-euler-88-solution/
+
+def prodsum(p, s, c, start):
+    k = p - s + c     # product - sum + number of factors
+    if k < kmax:
+        if p < n[k]: n[k] = p
+        for i in xrange(start, kmax//p*2 + 1):
+            prodsum(p*i, s+i, c+1, i)
+
+kmax = int(input('Enter a value for kmax?'))
+if kmax > 12: kmax+= 1
+n = [2*kmax] * kmax
+prodsum(1, 1, 1, 2)
+
+print "Project Euler 88 Solution =", sum(set(n[2:]))
+-}
+kmax = 12+1
+prodsum p s c start | k > kmax = []
+                    | k < (n k) = [ prodsum (p * i) (s + i) (c + 1) i
+                                  | i <- [start..kmax `div` p * 2 + 1]]
+  where k = p - s + c
