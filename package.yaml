@@ -28,6 +28,7 @@ dependencies:
 - data-memocombinators
 - array
 - combinat
+- containers
 
 library:
   source-dirs: src

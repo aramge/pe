@@ -1,9 +1,10 @@
+{-# LANGUAGE FlexibleContexts    #-}
 module Lib
     ( someFunc
     ) where
 
 import qualified Data.Sort
-import qualified Math.NumberTheory.Primes
+import qualified Math.NumberTheory.Primes as Pr
 import qualified Math.NumberTheory.Primes.Testing as P
 import qualified Math.NumberTheory.Primes.Factorisation as F
 --import qualified Math.NumberTheory.Primes.Factorisation
@@ -21,9 +22,13 @@ import qualified Data.MemoCombinators as Memo
 import qualified Data.Array as A
 import qualified Math.Combinat.Partitions.Integer as C
 import Control.Arrow ((&&&))
+import Data.Ratio
+import qualified Data.Map.Strict as Map
+
 
 someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+--someFunc = putStrLn "someFunc"
+someFunc = print sol60
 
 -- ---------------------- project euler 51 -----------------------------
 -- [1..]   find smallest prime
@@ -179,52 +184,174 @@ problem_78 =
 -- Von den Profis
 sol78 = head . dropWhile (((/=) 0) . (flip mod 10000000) . snd) $
         zip [0..] $ map C.countPartitions [0..]
--- ---------------------- project euler 88 -----------------------------
---isNaturalNum n = n == (sum $ divisors' n)
 
-factorise' :: Integer -> [(Integer, Int)]
-factorise' n = map (\(f, t) -> (f, fromIntegral t)) $ F.factorise n
-
---divisors :: Integral a => a -> [a]
-divisors n = map product $ sequence 
-                    [take (k+1) $ iterate (p*) 1 | (p,k) <- factorise' n]
-divisors' n = foldr go [1] . map (head &&& length) . X.group $ fac n 2
-    where
-    go (_, 0) xs = xs
-    go (p, k) xs = let ys = map (* p) xs in go (p, pred k) ys ++ xs
-    fac n i
-        | n < i * i      = if n == 1 then [] else [n]
-        | n `mod` i == 0 = i: fac (n `div` i) i
-        | otherwise      = fac n $ succ i
-
-über n k = fact n `div` fact k `div` fact (n - k)
-stirling2 n k = sum [(-1)^(k-j) * (k `über`j) * j^n | j <- [1..k]] `div` fact k
-sumStirling2 n k = sum [stirling2 k r | r <- [0..n]] 
-
-powerset :: [a] -> [[a]]
-powerset (x:xs) = let xs' = powerset xs in xs' ++ map (x:) xs'
-powerset []     = [[]]
-
+-- ---------------------- project euler 57 -----------------------------
 {-
-#Project Euler Problem 88
-#https://blog.dreamshire.com/project-euler-88-solution/
+            1   3
+sqrt2 = 1 + - = - = 1.5
+            2   2
 
-def prodsum(p, s, c, start):
-    k = p - s + c     # product - sum + number of factors
-    if k < kmax:
-        if p < n[k]: n[k] = p
-        for i in xrange(start, kmax//p*2 + 1):
-            prodsum(p*i, s+i, c+1, i)
+              1         1   5   2   7
+sqrt2 = 1 + ----- = 1 + - = - + - = - = 1.4
+                1       5   5   5   5
+            2 + -       -
+                2       2
 
-kmax = int(input('Enter a value for kmax?'))
-if kmax > 12: kmax+= 1
-n = [2*kmax] * kmax
-prodsum(1, 1, 1, 2)
+                1             1           1      12   5    17
+sqrt2 = 1 + --------- = 1 + ----- = 1 + ------ = -- + -- = -- = 1.41666
+                  1             2       10   2   12   12   12
+            2 + -----       2 + -       -- + -
+                    1           5        5   5
+                2 + -
+                    2
 
-print "Project Euler 88 Solution =", sum(set(n[2:]))
+                1                  1      29   12   41      
+sqrt2 = 1 + ------------- = 1 + ------- = -- + -- = -- = 1.41379
+                  1             24   5    29   29   29
+            2 + ---------       -- + --                                         
+                      1         12   12                                   
+                2 + -----                                             
+                        1                                            
+                    2 + -                                            
+                        2                                            
+
+                1                      1      70   29   99      
+sqrt2 = 1 + ----------------- = 1 + ------- = -- + -- = -- = 1.41379
+                  1                 58   12   70   70   70
+            2 + -------------       -- + --                                         
+                      1             29   29                                   
+                2 + ---------                                             
+                        1                                            
+                    2 + -----                                            
+                            1                                            
+                        2 + -
+                            2
 -}
-kmax = 12+1
-prodsum p s c start | k > kmax = []
-                    | k < (n k) = [ prodsum (p * i) (s + i) (c + 1) i
-                                  | i <- [start..kmax `div` p * 2 + 1]]
-  where k = p - s + c
+
+sqrt2' :: [Rational]
+sqrt2' = 3 % 2 : next sqrt2'
+  where
+    next (x:xs) = (numerator x + 2 * denominator x)
+                  % (numerator x + denominator x) : next xs 
+
+numeratorLongerDenominator :: Rational -> Bool
+numeratorLongerDenominator r = n > d
+  where n = length . show $ numerator r
+        d = length . show $ denominator r
+
+sol57' = length
+        . filter numeratorLongerDenominator
+        $ take 1000 sqrt2'
+
+sqrt2 :: [(Integer, Integer)]
+sqrt2 = (3, 2) : next sqrt2
+  where
+    next ((n, d):xs) = (n + 2 * d, n + d) : next xs 
+
+sqrt2'' :: [(Integer, Integer)]
+sqrt2'' = iterate (\(n, d) -> (n + 2 * d, n + d)) (3, 2) 
+
+nLd :: (Integer, Integer) -> Bool
+nLd (n,d) = (length . show) n > (length . show) d 
+
+sol57 = length
+        . filter nLd
+        $ take 1000000 sqrt2
+-- ---------------------- project euler 58 -----------------------------
+spiralcorners :: [(Integer, Integer, Rational)]
+spiralcorners = [(1+(i-2)*4+x, (i - 1) * 2 + 1, val $ 4 * i^2 - (10 - 2 * x) * i + 7 - 2 * x)
+                | i <- [2..], x <- [0..3]]
+  where val v | P.isPrime v = 1
+              | otherwise   = 0
+
+sol58 = dropWhile ((> 0.1) . (\(_, _, v) -> v))
+        $ scanl1 nAvg spiralcorners
+
+nAvg :: (Integer, Integer, Rational) -> (Integer, Integer, Rational) -> (Integer, Integer, Rational)
+nAvg (n1, l1, v1) (n2, l2, v2) = (n2, l2, (n1' * v1 + v2) * (recip n2'))
+  where n1' = toRational n1
+        n2' = toRational n2
+-- ---------------------- project euler 60 -----------------------------
+sol60 = [ (p1,p2,p3,p4, p5, p1 + p2 + p3 + p4 + p5)   
+          | (p1, m1) <- infPrimes,
+          (p2, m2) <- takeWhile ((< p1) . fst) $ infPrimes,
+          (p3, m3) <- takeWhile ((< p2) . fst) $ infPrimes,
+          (p4, m4) <- takeWhile ((< p3) . fst) $ infPrimes,
+          (p5, m5) <- takeWhile ((< p4) . fst) $ infPrimes,  
+          testPrimes (p5, m5) (p4, m4),
+          testPrimes (p5, m5) (p3, m3),
+          testPrimes (p5, m5) (p2, m2),
+          testPrimes (p5, m5) (p1, m1), 
+          testPrimes (p4, m4) (p3, m3),
+          testPrimes (p4, m4) (p2, m2),
+          testPrimes (p4, m4) (p1, m1),
+          testPrimes (p3, m3) (p2, m2),
+          testPrimes (p3, m3) (p1, m1),
+          testPrimes (p2, m2) (p1, m1)
+          ] 
+infPrimes :: [(Integer, Integer)]
+infPrimes = map ((\p -> (p, magnitude p)) . Pr.unPrime) Pr.primes
+
+testPrimes :: (Integer, Integer) -> (Integer, Integer) -> Bool
+testPrimes (p1, m1) (p2, m2) = P.isPrime (p1 + p2 * 10^m1) &&
+                               P.isPrime (p2 + p1 * 10^m2)
+magnitude :: Integer -> Integer
+magnitude 0 = 0
+magnitude i = 1 + magnitude (i `div` 10)
+
+
+-- Haskell wiki
+problem_60 = print $ (sum . head) $ solve 
+--isPrime x = x==3 || millerRabinPrimality x 2 
+ 
+solve = do
+ a <- primesTo10000
+ let m = f a $ dropWhile (<= a) primesTo10000
+ b <- m
+ let n = f b $ dropWhile (<= b) m
+ c <- n
+ let o = f c $ dropWhile (<= c) n
+ d <- o
+ let p = f d $ dropWhile (<= d) o
+ e <- p
+ return [a,b,c,d,e]
+ where
+ f x = filter (\y -> and [P.isPrime $read $shows x $show y,
+                 P.isPrime $read $shows y $show x])
+primesTo10000 = 2:filter P.isPrime [3,5..9999]
+
+-- ---------------------- project euler 61 -----------------------------
+triangles   = [n * (n+1) `div` 2       | n <- [45..140], n `mod` 100 > 9]
+squares     = [n^2                     | n <- [32..99], n `mod` 100 > 9]
+pentagonals = [n * (3 * n - 1) `div` 2 | n <- [26..81], n `mod` 100 > 9]
+hexagonals  = [n * (2 * n - 1)         | n <- [23..70], n `mod` 100 > 9]
+heptagonals = [n * (5 * n - 3) `div` 2 | n <- [21..63], n `mod` 100 > 9]
+octagonals  = [n * (3 * n - 2)         | n <- [19..58], n `mod` 100 > 9]
+
+digitsToPair i = (u, i - 100 * u)
+  where u = i `div` 100
+
+filterSeq xs [] = xs
+filterSeq xs ys = filter ((`elem` fstYs) . snd) xs
+  where fstYs = map fst ys
+
+head' [] = []
+head' (x:xs) = x
+
+testFourDigitSeq xs = foldr (\x acc -> filterSeq x (head' acc):acc) [] xs
+
+imperative = do
+  print "Hallo"
+  let a = 5
+  print a
+  let a = 4
+  print a
+
+middleCharacters :: String -> String
+middleCharacters [] = []
+middleCharacters [a] = [a]
+middleCharacters xs | length xs `mod` 2 == 0 = [last x1] ++ [head x2]
+                    | otherwise             = [head x2]
+  where l2 = length xs `div` 2
+        x1 = take l2 xs
+        x2 = drop l2 xs
