@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 45e57a884bc5813189ff2aa667d5c7a772bb530613559f9773fac8a3cbc812ff
+-- hash: a025649d93794fce81867937503da1f6f88ad0da16110dbba93394a71244070a
 
 name:           pe
 version:        0.1.0.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Testmap
   other-modules:
       Paths_pe
   hs-source-dirs:
